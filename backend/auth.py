@@ -138,3 +138,24 @@ def get_current_user(
         "id": user_id,
         "email": email
     }
+
+
+def verify_user_access(current_user: Dict[str, Any], user_id: str) -> None:
+    """
+    Verify that the current user has access to the requested resource.
+
+    Compares the JWT user_id with the route user_id to prevent
+    unauthorized access to other users' data.
+
+    Args:
+        current_user: User dict from get_current_user
+        user_id: User ID from route parameter
+
+    Raises:
+        HTTPException: 403 if user_id doesn't match JWT user_id
+    """
+    if current_user["id"] != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: you can only access your own resources"
+        )

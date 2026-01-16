@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from database import create_db_and_tables
 from routes.tasks import router as tasks_router
+from chat.router import router as chat_router
 
 load_dotenv()
 
@@ -23,8 +24,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Todo API",
-    description="RESTful API for Phase II Todo Application with JWT authentication",
-    version="1.0.0",
+    description="RESTful API for Phase III Todo Application with AI Chatbot",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -32,7 +33,11 @@ app = FastAPI(
 FRONTEND_URL = os.getenv("FRONTEND_URL", "")
 allowed_origins = [
     "http://localhost:3000",  # Next.js dev server
+    "http://localhost:3001",
+    "http://localhost:3002",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
 ]
 
 # Add production frontend URL if configured
@@ -54,12 +59,13 @@ app.add_middleware(
 
 # Include routers
 app.include_router(tasks_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
 
 
 @app.get("/")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "2.0.0", "phase": "III"}
 
 
 @app.post("/debug/verify-token")

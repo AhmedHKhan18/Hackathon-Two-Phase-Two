@@ -8,6 +8,7 @@ import { TaskList } from "@/components/task-list";
 import { TaskForm } from "@/components/task-form";
 import { Modal } from "@/components/modal";
 import { FloatingActionButton } from "@/components/floating-action-button";
+import { ChatWidget } from "@/components/chat-widget";
 import {
   Task,
   TaskCreateRequest,
@@ -312,6 +313,9 @@ export default function DashboardPage() {
       {!editingTask && (
         <FloatingActionButton onClick={() => setIsCreateModalOpen(true)} />
       )}
+
+      {/* Chat Widget */}
+      <ChatWidget />
 
       {/* Create Task Modal */}
       <Modal

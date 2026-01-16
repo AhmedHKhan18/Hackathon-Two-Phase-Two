@@ -1,0 +1,413 @@
+openapi: 3.1.0
+info:
+  title: Todo Chatbot API
+  description: Chat API for Phase III Todo AI Chatbot with OpenAI Agent integration
+  version: 1.0.0
+  contact:
+    name: Phase III Todo Chatbot
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Better Auth
+
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          maxLength: 2000
+          description: User's natural language message
+          example: "Add a task to buy groceries"
+        conversation_id:
+          type: integer
+          nullable: true
+          description: Existing conversation ID to continue (optional)
+          example: 123
+
+    ChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - response
+      properties:
+        conversation_id:
+          type: integer
+          description: The conversation ID (new or existing)
+          example: 123
+        response:
+          type: string
+          description: Assistant's natural language response
+          example: "I've added 'buy groceries' to your tasks."
+        tool_calls:
+          type: array
+          description: List of MCP tools called during processing
+          items:
+            $ref: '#/components/schemas/ToolCall'
+
+    ToolCall:
+      type: object
+      properties:
+        tool:
+          type: string
+          description: Name of the MCP tool called
+          example: "add_task"
+        arguments:
+          type: object
+          description: Arguments passed to the tool
+          additionalProperties: true
+          example:
+            title: "buy groceries"
+        result:
+          type: object
+          description: Result returned by the tool
+          additionalProperties: true
+          example:
+            status: "success"
+            task_id: 45
+            title: "buy groceries"
+
+    ConversationResponse:
+      type: object
+      required:
+        - id
+        - user_id
+        - messages
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Conversation ID
+          example: 123
+        user_id:
+          type: string
+          description: Owner's user ID
+          example: "user_abc123"
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageResponse'
+        created_at:
+          type: string
+          format: date-time
+          description: Conversation creation timestamp
+          example: "2026-01-15T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last message timestamp
+          example: "2026-01-15T10:30:00Z"
+
+    MessageResponse:
+      type: object
+      required:
+        - id
+        - role
+        - content
+        - created_at
+      properties:
+        id:
+          type: integer
+          description: Message ID
+          example: 456
+        role:
+          type: string
+          enum: [user, assistant]
+          description: Message sender role
+          example: "user"
+        content:
+          type: string
+          description: Message content
+          example: "Add a task to buy groceries"
+        created_at:
+          type: string
+          format: date-time
+          description: Message timestamp
+          example: "2026-01-15T10:00:00Z"
+
+    ConversationListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 123
+          message_count:
+            type: integer
+            example: 15
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+          preview:
+            type: string
+            description: First user message as preview
+            example: "Add a task to buy groceries"
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Message is required"
+
+  parameters:
+    UserIdParam:
+      name: user_id
+      in: path
+      required: true
+      description: User ID (must match authenticated user)
+      schema:
+        type: string
+      example: "user_abc123"
+
+    ConversationIdParam:
+      name: conversation_id
+      in: path
+      required: true
+      description: Conversation ID
+      schema:
+        type: integer
+      example: 123
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Could not validate credentials"
+
+    Forbidden:
+      description: User ID mismatch - cannot access other users' data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Cannot access other users' conversations"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Conversation not found"
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    loc:
+                      type: array
+                      items:
+                        type: string
+                    msg:
+                      type: string
+                    type:
+                      type: string
+
+paths:
+  /api/{user_id}/chat:
+    post:
+      summary: Send a chat message
+      description: |
+        Send a natural language message to the AI assistant.
+
+        The assistant interprets the message, calls appropriate MCP tools,
+        and returns a natural language response.
+
+        If conversation_id is not provided, a new conversation is created.
+        All messages are persisted to the database.
+      operationId: sendChatMessage
+      tags:
+        - Chat
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              create_task:
+                summary: Create a new task
+                value:
+                  message: "Add a task to buy groceries"
+              continue_conversation:
+                summary: Continue existing conversation
+                value:
+                  conversation_id: 123
+                  message: "Also add milk to the list"
+              list_tasks:
+                summary: Query tasks
+                value:
+                  message: "What are my pending tasks?"
+      responses:
+        '200':
+          description: Chat response from assistant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+              examples:
+                task_created:
+                  summary: Task creation response
+                  value:
+                    conversation_id: 123
+                    response: "I've added 'buy groceries' to your tasks."
+                    tool_calls:
+                      - tool: "add_task"
+                        arguments:
+                          title: "buy groceries"
+                        result:
+                          status: "success"
+                          task_id: 45
+                          title: "buy groceries"
+                task_list:
+                  summary: Task listing response
+                  value:
+                    conversation_id: 123
+                    response: "You have 3 pending tasks:\n1. buy groceries (ID: 45)\n2. finish report (ID: 42)\n3. call mom (ID: 38)"
+                    tool_calls:
+                      - tool: "list_tasks"
+                        arguments:
+                          status: "pending"
+                        result:
+                          status: "success"
+                          count: 3
+                          tasks:
+                            - task_id: 45
+                              title: "buy groceries"
+                              completed: false
+                            - task_id: 42
+                              title: "finish report"
+                              completed: false
+                            - task_id: 38
+                              title: "call mom"
+                              completed: false
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          description: Server error (agent or tool failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "An error occurred while processing your message"
+
+  /api/{user_id}/conversations:
+    get:
+      summary: List all conversations
+      description: Returns all conversations for the authenticated user
+      operationId: listConversations
+      tags:
+        - Conversations
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/{user_id}/conversations/{conversation_id}:
+    get:
+      summary: Get conversation with messages
+      description: Returns a specific conversation with all its messages
+      operationId: getConversation
+      tags:
+        - Conversations
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/ConversationIdParam'
+      responses:
+        '200':
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a conversation
+      description: Permanently deletes a conversation and all its messages
+      operationId: deleteConversation
+      tags:
+        - Conversations
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/ConversationIdParam'
+      responses:
+        '200':
+          description: Conversation deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+tags:
+  - name: Chat
+    description: AI chatbot interaction endpoints
+  - name: Conversations
+    description: Conversation management endpoints
