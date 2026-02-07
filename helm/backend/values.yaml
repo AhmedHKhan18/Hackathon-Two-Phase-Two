@@ -39,12 +39,14 @@ livenessProbe:
   enabled: true
   path: "/"
   initialDelaySeconds: 60
-  periodSeconds: 10
+  periodSeconds: 15
+  timeoutSeconds: 5
   failureThreshold: 5
 
 readinessProbe:
   enabled: true
   path: "/"
   initialDelaySeconds: 15
-  periodSeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
   failureThreshold: 5

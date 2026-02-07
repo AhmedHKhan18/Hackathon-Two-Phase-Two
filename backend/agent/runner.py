@@ -6,8 +6,6 @@ processing user messages and returning agent responses.
 
 import json
 from typing import List, Dict, Any, Optional
-from google import genai
-from google.genai import types
 
 from .config import get_agent_config
 from .prompts import SYSTEM_PROMPT
@@ -22,6 +20,10 @@ class AgentRunner:
 
     def __init__(self):
         """Initialize the agent runner."""
+        # Lazy import google.genai to avoid hanging during module load
+        # (the package does network calls on import that fail inside k8s)
+        from google import genai
+
         self.config = get_agent_config()
         self.mcp_server = get_mcp_server()
 
@@ -32,7 +34,7 @@ class AgentRunner:
         # Configure Gemini client
         self.client = genai.Client(api_key=self.config.api_key)
 
-    def _convert_tools_to_gemini_format(self, openai_tools: List[Dict]) -> List[types.Tool]:
+    def _convert_tools_to_gemini_format(self, openai_tools: List[Dict]) -> list:
         """Convert OpenAI-format tools to Gemini format.
 
         Args:
@@ -41,6 +43,8 @@ class AgentRunner:
         Returns:
             List of Gemini Tool objects
         """
+        from google.genai import types
+
         function_declarations = []
 
         for tool in openai_tools:
@@ -96,6 +100,8 @@ class AgentRunner:
                 - response: The agent's text response
                 - tool_calls: List of tools called and their results
         """
+        from google.genai import types
+
         # Get tools in Gemini format
         openai_tools = self.mcp_server.get_tools()
         gemini_tools = self._convert_tools_to_gemini_format(openai_tools)

@@ -28,7 +28,7 @@ class AgentConfig:
     def __post_init__(self):
         """Load API key from environment if not provided."""
         if self.api_key is None:
-            self.api_key = os.getenv("GOOGLE_API_KEY")
+            self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
     def validate(self) -> bool:
         """Validate the configuration.
