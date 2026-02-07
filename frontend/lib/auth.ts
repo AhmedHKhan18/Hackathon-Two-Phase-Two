@@ -9,10 +9,15 @@ const pool = new Pool({
   },
 });
 
+// Build trusted origins from env var (comma-separated) or use defaults
+const trustedOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
+  ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",").map((o) => o.trim())
+  : ["http://localhost:3000", "http://localhost:3001"];
+
 export const auth = betterAuth({
   database: pool,
   basePath: "/api/auth",
-  trustedOrigins: ["http://localhost:3000", "http://localhost:3001"],
+  trustedOrigins,
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

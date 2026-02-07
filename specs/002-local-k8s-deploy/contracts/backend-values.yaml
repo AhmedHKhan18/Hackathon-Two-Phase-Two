@@ -1,0 +1,164 @@
+# Helm Values Contract: Backend Chart
+# File: helm/backend/values.yaml
+#
+# This document defines the expected values interface for the backend Helm chart.
+# All values are configurable at install/upgrade time via --set or -f flags.
+
+# =============================================================================
+# REPLICA CONFIGURATION
+# =============================================================================
+
+# Number of backend pod replicas
+# Type: integer
+# Default: 1
+# Constraints: >= 1
+replicaCount: 1
+
+# =============================================================================
+# IMAGE CONFIGURATION
+# =============================================================================
+
+image:
+  # Docker image repository/name
+  # Type: string
+  # Default: "todo-backend"
+  repository: "todo-backend"
+
+  # Image tag
+  # Type: string
+  # Default: "latest"
+  tag: "latest"
+
+  # Image pull policy
+  # Type: string
+  # Allowed: "Always", "IfNotPresent", "Never"
+  # Default: "Never" (for local Minikube images)
+  pullPolicy: "Never"
+
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+
+service:
+  # Kubernetes service type
+  # Type: string
+  # Allowed: "ClusterIP", "NodePort", "LoadBalancer"
+  # Default: "NodePort"
+  type: "NodePort"
+
+  # Container port (internal)
+  # Type: integer
+  # Default: 8000
+  port: 8000
+
+  # NodePort for external access (when type is NodePort)
+  # Type: integer
+  # Constraints: 30000-32767
+  # Default: 30000
+  nodePort: 30000
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION (ConfigMap)
+# =============================================================================
+
+config:
+  # Frontend URL for CORS configuration
+  # Type: string (URL)
+  # Required: Yes
+  # Example: "http://192.168.49.2:30080"
+  frontendUrl: ""
+
+# =============================================================================
+# SECRETS CONFIGURATION
+# =============================================================================
+
+secrets:
+  # Neon PostgreSQL connection string
+  # Type: string
+  # Required: Yes
+  # Format: postgresql://user:password@host:port/database?sslmode=require
+  databaseUrl: ""
+
+  # Better Auth JWT signing secret (must match frontend)
+  # Type: string
+  # Required: Yes
+  # Constraints: Minimum 32 characters
+  betterAuthSecret: ""
+
+  # Google Gemini API key for AI chatbot
+  # Type: string
+  # Required: Yes
+  geminiApiKey: ""
+
+# =============================================================================
+# RESOURCE LIMITS
+# =============================================================================
+
+resources:
+  requests:
+    # CPU request
+    # Type: string (Kubernetes CPU units)
+    # Default: "100m"
+    cpu: "100m"
+
+    # Memory request
+    # Type: string (Kubernetes memory units)
+    # Default: "128Mi"
+    memory: "128Mi"
+
+  limits:
+    # CPU limit
+    # Type: string (Kubernetes CPU units)
+    # Default: "500m"
+    cpu: "500m"
+
+    # Memory limit
+    # Type: string (Kubernetes memory units)
+    # Default: "512Mi"
+    memory: "512Mi"
+
+# =============================================================================
+# HEALTH CHECKS
+# =============================================================================
+
+livenessProbe:
+  # Enable liveness probe
+  # Type: boolean
+  # Default: true
+  enabled: true
+
+  # Path for health check
+  # Type: string
+  # Default: "/"
+  path: "/"
+
+  # Initial delay before first probe
+  # Type: integer (seconds)
+  # Default: 30
+  initialDelaySeconds: 30
+
+  # Interval between probes
+  # Type: integer (seconds)
+  # Default: 10
+  periodSeconds: 10
+
+readinessProbe:
+  # Enable readiness probe
+  # Type: boolean
+  # Default: true
+  enabled: true
+
+  # Path for health check
+  # Type: string
+  # Default: "/"
+  path: "/"
+
+  # Initial delay before first probe
+  # Type: integer (seconds)
+  # Default: 5
+  initialDelaySeconds: 5
+
+  # Interval between probes
+  # Type: integer (seconds)
+  # Default: 5
+  periodSeconds: 5

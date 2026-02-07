@@ -1,0 +1,160 @@
+# Helm Values Contract: Frontend Chart
+# File: helm/frontend/values.yaml
+#
+# This document defines the expected values interface for the frontend Helm chart.
+# All values are configurable at install/upgrade time via --set or -f flags.
+
+# =============================================================================
+# REPLICA CONFIGURATION
+# =============================================================================
+
+# Number of frontend pod replicas
+# Type: integer
+# Default: 1
+# Constraints: >= 1
+replicaCount: 1
+
+# =============================================================================
+# IMAGE CONFIGURATION
+# =============================================================================
+
+image:
+  # Docker image repository/name
+  # Type: string
+  # Default: "todo-frontend"
+  repository: "todo-frontend"
+
+  # Image tag
+  # Type: string
+  # Default: "latest"
+  tag: "latest"
+
+  # Image pull policy
+  # Type: string
+  # Allowed: "Always", "IfNotPresent", "Never"
+  # Default: "Never" (for local Minikube images)
+  pullPolicy: "Never"
+
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+
+service:
+  # Kubernetes service type
+  # Type: string
+  # Allowed: "ClusterIP", "NodePort", "LoadBalancer"
+  # Default: "NodePort"
+  type: "NodePort"
+
+  # Container port (internal)
+  # Type: integer
+  # Default: 3000
+  port: 3000
+
+  # NodePort for external access (when type is NodePort)
+  # Type: integer
+  # Constraints: 30000-32767
+  # Default: 30080
+  nodePort: 30080
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION (ConfigMap)
+# =============================================================================
+
+config:
+  # Backend API URL for frontend to call
+  # Type: string (URL)
+  # Required: Yes
+  # Example: "http://192.168.49.2:30000"
+  # Note: Must be accessible from browser, not just within cluster
+  nextPublicApiUrl: ""
+
+# =============================================================================
+# SECRETS CONFIGURATION
+# =============================================================================
+
+secrets:
+  # Neon PostgreSQL connection string (for Better Auth)
+  # Type: string
+  # Required: Yes
+  # Format: postgresql://user:password@host:port/database?sslmode=require
+  databaseUrl: ""
+
+  # Better Auth JWT signing secret
+  # Type: string
+  # Required: Yes
+  # Constraints: Minimum 32 characters
+  betterAuthSecret: ""
+
+# =============================================================================
+# RESOURCE LIMITS
+# =============================================================================
+
+resources:
+  requests:
+    # CPU request
+    # Type: string (Kubernetes CPU units)
+    # Default: "100m"
+    cpu: "100m"
+
+    # Memory request
+    # Type: string (Kubernetes memory units)
+    # Default: "128Mi"
+    memory: "128Mi"
+
+  limits:
+    # CPU limit
+    # Type: string (Kubernetes CPU units)
+    # Default: "500m"
+    cpu: "500m"
+
+    # Memory limit
+    # Type: string (Kubernetes memory units)
+    # Default: "512Mi"
+    memory: "512Mi"
+
+# =============================================================================
+# HEALTH CHECKS
+# =============================================================================
+
+livenessProbe:
+  # Enable liveness probe
+  # Type: boolean
+  # Default: true
+  enabled: true
+
+  # Path for health check
+  # Type: string
+  # Default: "/"
+  path: "/"
+
+  # Initial delay before first probe
+  # Type: integer (seconds)
+  # Default: 30
+  initialDelaySeconds: 30
+
+  # Interval between probes
+  # Type: integer (seconds)
+  # Default: 10
+  periodSeconds: 10
+
+readinessProbe:
+  # Enable readiness probe
+  # Type: boolean
+  # Default: true
+  enabled: true
+
+  # Path for health check
+  # Type: string
+  # Default: "/"
+  path: "/"
+
+  # Initial delay before first probe
+  # Type: integer (seconds)
+  # Default: 5
+  initialDelaySeconds: 5
+
+  # Interval between probes
+  # Type: integer (seconds)
+  # Default: 5
+  periodSeconds: 5

@@ -1,0 +1,50 @@
+# Default values for todo-backend
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: todo-backend
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 8000
+  nodePort: 30000
+
+# Environment configuration (ConfigMap)
+config:
+  # Frontend URL for CORS configuration
+  frontendUrl: "http://192.168.49.2:30080"
+
+# Secrets configuration
+secrets:
+  # Neon PostgreSQL connection string
+  databaseUrl: "postgresql://neondb_owner:npg_7fWvA2naTRwV@ep-steep-unit-ahahqhu2-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
+  # Better Auth JWT signing secret (must match frontend)
+  betterAuthSecret: "OJpplQO1MN4rUSNXfqtZW8aHQKlM0FHV"
+  # Google Gemini API key for AI chatbot
+  geminiApiKey: "AIzaSyCYv9rwimJ8ZB7xlkMh9C2flZJkZpajw-E"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+livenessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 5
+
+readinessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  failureThreshold: 5

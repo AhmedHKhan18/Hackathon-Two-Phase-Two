@@ -1,0 +1,52 @@
+# Default values for todo-frontend
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: todo-frontend
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 30080
+
+# Environment configuration (ConfigMap)
+config:
+  # Backend API URL - must be accessible from browser
+  nextPublicApiUrl: "http://192.168.49.2:30000"
+  # Better Auth URL - the frontend's own URL for auth redirects/cookies
+  betterAuthUrl: "http://192.168.49.2:30080"
+  # Trusted origins for Better Auth CORS (comma-separated)
+  betterAuthTrustedOrigins: "http://192.168.49.2:30080,http://localhost:3000,http://localhost:3001"
+
+# Secrets configuration
+secrets:
+  # Neon PostgreSQL connection string (for Better Auth)
+  databaseUrl: "postgresql://neondb_owner:npg_7fWvA2naTRwV@ep-steep-unit-ahahqhu2-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
+  # Better Auth JWT signing secret (min 32 chars)
+  betterAuthSecret: "OJpplQO1MN4rUSNXfqtZW8aHQKlM0FHV"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+livenessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 45
+  periodSeconds: 15
+  timeoutSeconds: 5
+
+readinessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
